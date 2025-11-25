@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  sentinel-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sentinel-mcp-server
+    restart: unless-stopped
+    
+    # Environment variables (optional - can override config.yaml)
+    environment:
+      - OPENSEARCH_HOST=http://192.168.1.133:9200
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=admin
+    
+    # Mount config file
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    
+    # Network mode - use host network to access local OpenSearch
+    # Alternative: use bridge mode if OpenSearch is also in Docker
+    network_mode: host
+    
+    # Standard input/output for MCP protocol
+    stdin_open: true
+    tty: true
+    
+    # Command to run
+    command: ["python", "-m", "sentinel_mcp.server", "--config", "config.yaml"]
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Alternative configuration with bridge network
+# Uncomment this section if your OpenSearch is also in Docker
+# networks:
+#   sentinel-network:
+#     driver: bridge
