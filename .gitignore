@@ -35,9 +35,7 @@ ENV/
 *.swo
 *~
 
-# Configuration
-config.yaml
-!config.yaml.example
+
 
 # Logs
 *.log

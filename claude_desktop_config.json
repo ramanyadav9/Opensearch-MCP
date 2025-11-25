@@ -1,12 +1,18 @@
 {
   "mcpServers": {
     "sentinel-ai": {
-      "command": "E:\\CyberSentinal All\\Sentinel-AI\\mcp-server\\venv\\Scripts\\python.exe",
+      "command": "wsl",
       "args": [
+        "-e",
+        "docker",
+        "exec",
+        "-i",
+        "sentinel-mcp-server",
+        "python",
         "-m",
         "sentinel_mcp.server",
         "--config",
-        "E:\\CyberSentinal All\\Sentinel-AI\\mcp-server\\config.yaml"
+        "config.yaml"
       ]
     }
   }

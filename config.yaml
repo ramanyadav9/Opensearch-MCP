@@ -1,0 +1,50 @@
+opensearch:
+  # OpenSearch connection settings
+  hosts: "http://192.168.1.133:9200"
+  username: "admin"
+  password: "admin"
+  verify_certs: false
+  use_ssl: false
+  timeout: 30
+
+security:
+  # Field-level security - exclude sensitive fields from results
+  field_level_security:
+    excluded_fields:
+      - "*password*"
+      - "*secret*"
+      - "*token*"
+      - "*credential*"
+      - "*key*"
+
+tools:
+  # Tool execution limits
+  limits:
+    max_page_size: 1000        # Maximum results per page
+    default_page_size: 100     # Default results per page
+    max_flow_limit: 5000       # Maximum network flows
+    search_timeout: 30         # Query timeout in seconds
+
+  # Enable/disable specific tools
+  enabled:
+    - "AdvancedSIEMSearchTool"
+    - "AgentLogsTool"
+    - "MajorAlertsTool"
+    - "NetworkAnalyticsTool"
+    - "MITREAttackTool"
+    - "HIPAATool"
+    - "GDPRTool"
+    - "NISTTool"
+    - "FIMTool"
+    - "VulnerabilityTool"
+    - "AuthenticationSessionsTool"
+    - "ListIndicesTool"
+    - "IndexMappingTool"
+    - "NetworkAnalyticsTool"
+    - "MITREAttackTool"
+    - "EndpointAnalyticsTool"
+    - "ThreatHuntingTool"
+
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
