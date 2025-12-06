@@ -27,6 +27,8 @@ from .tools.network import NetworkAnalyticsTool
 from .tools.mitre import MITREAttackTool
 from .tools.endpoint import EndpointAnalyticsTool
 from .tools.threat_hunt import ThreatHuntingTool
+from .tools.investigate_ip import InvestigateIPTool
+from .tools.investigate_user import InvestigateUserTool
 
 # Configure logging
 logging.basicConfig(
@@ -87,6 +89,8 @@ class SentinelMCPServer:
             'MITREAttackTool': MITREAttackTool(self.os_client, tools_config),
             'EndpointAnalyticsTool': EndpointAnalyticsTool(self.os_client, tools_config),
             'ThreatHuntingTool': ThreatHuntingTool(self.os_client, tools_config),
+            'InvestigateIPTool': InvestigateIPTool(self.os_client, tools_config),
+            'InvestigateUserTool': InvestigateUserTool(self.os_client, tools_config),
         }
         
         # Filter to enabled tools only
@@ -335,6 +339,40 @@ class SentinelMCPServer:
                 "hunt_type": common_schemas["hunt_type"],
                 "time_range": common_schemas["time_range"],
                 "limit": common_schemas["limit"]
+            }
+        elif tool_name == "investigate_ip":
+            return {
+                "ip": {
+                    "type": "string",
+                    "description": "IP address to investigate (IPv4 or IPv6)"
+                },
+                "time_range": {
+                    "type": "string",
+                    "description": "Correlation time window: 1h, 6h, 12h, 24h, 3d, 7d",
+                    "default": "12h"
+                },
+                "include_graph": {
+                    "type": "boolean",
+                    "description": "Include entity relationship graph in response",
+                    "default": True
+                }
+            }
+        elif tool_name == "investigate_user":
+            return {
+                "username": {
+                    "type": "string",
+                    "description": "Username or agent name to investigate (user==agent)"
+                },
+                "time_range": {
+                    "type": "string",
+                    "description": "Current activity window: 1h, 6h, 12h, 24h, 3d, 7d",
+                    "default": "24h"
+                },
+                "baseline_window": {
+                    "type": "string",
+                    "description": "Historical baseline window: 7d, 14d, 30d, 60d, 90d",
+                    "default": "30d"
+                }
             }
         
         return {}

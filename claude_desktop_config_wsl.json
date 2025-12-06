@@ -1,0 +1,19 @@
+{
+    "mcpServers": {
+        "sentinel-ai": {
+            "command": "wsl",
+            "args": [
+                "-e",
+                "docker",
+                "exec",
+                "-i",
+                "sentinel-mcp-server",
+                "python",
+                "-m",
+                "sentinel_mcp.server",
+                "--config",
+                "config.yaml"
+            ]
+        }
+    }
+}

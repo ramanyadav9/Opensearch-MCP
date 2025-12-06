@@ -3,6 +3,8 @@
     "sentinel-ai": {
       "command": "wsl",
       "args": [
+        "-d",
+        "kali-linux",
         "-e",
         "docker",
         "exec",
