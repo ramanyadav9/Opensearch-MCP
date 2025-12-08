@@ -16,8 +16,9 @@ class ThreatHuntingTool(BaseTool):
     
     def description(self) -> str:
         return (
-            "Hunt for suspicious activities including brute force attempts, "
-            "privilege escalation, lateral movement, and data exfiltration indicators."
+            "PROACTIVE THREAT HUNTING for specific attack patterns. Use for: 'Hunt for brute force', "
+            "'Find lateral movement', 'Detect persistence', 'Exfiltration detection'. "
+            "Specify hunt_type: all, brute_force, lateral_movement, persistence, exfiltration, privilege_escalation."
         )
     
     async def execute(self,

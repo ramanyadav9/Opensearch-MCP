@@ -9,7 +9,6 @@ from typing import Dict, Any, List
 from datetime import timedelta, datetime
 
 from .base import BaseTool
-from .base import BaseTool
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +23,6 @@ class InvestigateUserTool(BaseTool):
             client: OpenSearch client
             config: Tool configuration
         """
-        super().__init__(client, config)
         super().__init__(client, config)
     
     def name(self) -> str:

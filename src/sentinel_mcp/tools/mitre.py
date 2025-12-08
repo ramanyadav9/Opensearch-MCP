@@ -16,8 +16,9 @@ class MITREAttackTool(BaseTool):
     
     def description(self) -> str:
         return (
-            "Analyze security events mapped to the MITRE ATT&CK framework. "
-            "Shows tactics, techniques, and specific attack IDs detected in the environment."
+            "Get MITRE ATT&CK mapped events. Use for: 'Show attack techniques', 'What tactics are in use?', "
+            "'Filter by T-ID' (e.g. T1110). Returns tactic counts, technique breakdown, severity distribution. "
+            "Filter by tactic, technique, or id."
         )
     
     async def execute(self,

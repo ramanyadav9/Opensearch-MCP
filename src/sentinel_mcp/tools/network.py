@@ -17,8 +17,9 @@ class NetworkAnalyticsTool(BaseTool):
     
     def description(self) -> str:
         return (
-            "Analyze network traffic flows, identifying top connections, protocols, and data volume. "
-            "Useful for spotting unusual traffic patterns or data exfiltration."
+            "Get AGGREGATED NETWORK FLOWS (source->destination IP pairs). Use for: "
+            "'Show traffic patterns', 'Data exfiltration', 'Unusual connections', 'Top talkers'. "
+            "Returns connection counts, protocols, ports. Use get_connection_details for raw logs."
         )
     
     async def execute(self,
@@ -179,3 +180,143 @@ class NetworkAnalyticsTool(BaseTool):
             'top_protocols': [],
             'flows': []
         }
+
+
+class ConnectionDetailsTool(BaseTool):
+    """Get detailed connection logs with pagination"""
+    
+    def name(self) -> str:
+        return "get_connection_details"
+    
+    def description(self) -> str:
+        return (
+            "Get INDIVIDUAL CONNECTION LOGS (not aggregated). Use AFTER get_network_flows to drill down. "
+            "Filter by src_ip, dest_ip, country, direction (incoming/outgoing). "
+            "Returns paginated raw connection events with timestamps."
+        )
+    
+    async def execute(self,
+                     time_range: str = "24h",
+                     page: int = 1,
+                     size: int = 100,
+                     src_ip: str = None,
+                     dest_ip: str = None,
+                     country: str = None,
+                     connection_type: str = "all") -> Dict[str, Any]:
+        """Get connection details
+        
+        Args:
+            time_range: Time range
+            page: Page number
+            size: Results per page
+            src_ip: Source IP filter
+            dest_ip: Destination IP filter
+            country: Filter by country code (ISO 2)
+            connection_type: 'all', 'incoming', 'outgoing', 'internal'
+            
+        Returns:
+            Paginated connection logs
+        """
+        try:
+            # Cap page size
+            size = self.cap_page_size(size)
+            
+            # Parse time range
+            time_filter = TimeRangeParser.parse(time_range)
+            
+            # Build query
+            query_body = {
+                'bool': {
+                    'must': [time_filter]
+                }
+            }
+            
+            # Add IP filters
+            if src_ip:
+                query_body['bool']['must'].append({'term': {'network.srcIp': src_ip}})
+            if dest_ip:
+                query_body['bool']['must'].append({'term': {'network.destIp': dest_ip}})
+                
+            # Add Country filter
+            if country:
+                query_body['bool']['must'].append({
+                    'bool': {
+                        'should': [
+                            {'term': {'data.srccountry': country}},
+                            {'term': {'data.dstcountry': country}}
+                        ],
+                        'minimum_should_match': 1
+                    }
+                })
+            
+            # Add Connection Type filter
+            # This logic mirrors common SIEM logic for directionality
+            if connection_type == 'incoming':
+                # External source, internal dest (simplified)
+                query_body['bool']['must_not'] = [{'term': {'network.srcIp': '10.0.0.0/8'}}] # Example
+                # In reality, rely on `data.direction` if available or `rule.groups`
+                query_body['bool']['must'].append({'term': {'data.direction': 'inbound'}})
+            elif connection_type == 'outgoing':
+                query_body['bool']['must'].append({'term': {'data.direction': 'outbound'}})
+            
+            # Add false positive filter
+            query_body = self.add_false_positive_filter(query_body)
+            
+            # Get indices
+            indices = await self.discover_indices()
+            if not indices:
+                return {
+                    'logs': [],
+                    'pagination': self.format_pagination(page, size, 0)
+                }
+            
+            # Calculate offset
+            from_val = (page - 1) * size
+            
+            # Search
+            response = await self.client.search(
+                index=','.join(indices),
+                body={
+                    'query': query_body,
+                    'sort': [{'@timestamp': {'order': 'desc'}}],
+                    '_source': {
+                        'includes': [
+                            '@timestamp', 'network.srcIp', 'network.destIp',
+                            'network.srcPort', 'network.destPort', 'network.protocol',
+                            'data.srccountry', 'data.dstcountry', 'rule.description',
+                            'agent.name'
+                        ]
+                    }
+                },
+                size=size,
+                from_=from_val
+            )
+            
+            # Format logs
+            logs = []
+            for hit in response['hits']['hits']:
+                log_entry = {
+                    **hit['_source'],
+                    'id': hit['_id']
+                }
+                logs.append(log_entry)
+            
+            total = response['hits']['total']['value']
+            
+            return {
+                'logs': logs,
+                'pagination': self.format_pagination(page, size, total),
+                'query_info': {
+                    'time_range': time_range,
+                    'connection_type': connection_type,
+                    'src_ip': src_ip,
+                    'dest_ip': dest_ip
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Connection details error: {e}")
+            return {
+                'error': str(e),
+                'logs': []
+            }

@@ -55,9 +55,9 @@ class AdvancedSIEMSearchTool(BaseTool):
     
     def description(self) -> str:
         return (
-            "Advanced search for SIEM logs with DQL support, field boosting, and filtering. "
-            "Supports time ranges (15m, 1h, 24h, 7d, etc.), log types (firewall, ids, windows, linux), "
-            "and rule level filtering."
+            "GENERAL LOG SEARCH. Use for: free-form queries, DQL syntax, filtering logs. "
+            "Supports time_range (15m, 1h, 24h), log_type (firewall, ids, windows, linux), "
+            "min_level (0-15). Use specific category tools if searching for FIM, malware, etc."
         )
     
     async def execute(self, 

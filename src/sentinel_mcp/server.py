@@ -23,12 +23,22 @@ from .tools.search import AdvancedSIEMSearchTool
 from .tools.agent import AgentLogsTool
 from .tools.alerts import MajorAlertsTool
 from .tools.indices import ListIndicesTool, IndexMappingTool
-from .tools.network import NetworkAnalyticsTool
+from .tools.network import NetworkAnalyticsTool, ConnectionDetailsTool
 from .tools.mitre import MITREAttackTool
-from .tools.endpoint import EndpointAnalyticsTool
 from .tools.threat_hunt import ThreatHuntingTool
 from .tools.investigate_ip import InvestigateIPTool
 from .tools.investigate_user import InvestigateUserTool
+from .tools.get_log_by_id import GetLogsByTimestampTool
+from .tools.advanced_analytics import AdvancedAnalyticsTool
+from .tools.category import (
+    FIMEventsTool, SCAEventsTool, SessionEventsTool, MalwareEventsTool,
+    AIAnnotatedLogsTool, MLAnomaliesTool, VulnerabilitiesTool
+)
+from .tools.compliance import (
+    HIPAAEventsTool, GDPREventsTool, NISTEventsTool, 
+    PCIDSSEventsTool, TSCEventsTool
+)
+from .tools.uba_summary import UBASummaryTool
 
 # Configure logging
 logging.basicConfig(
@@ -86,11 +96,26 @@ class SentinelMCPServer:
             'ListIndicesTool': ListIndicesTool(self.os_client, tools_config),
             'IndexMappingTool': IndexMappingTool(self.os_client, tools_config),
             'NetworkAnalyticsTool': NetworkAnalyticsTool(self.os_client, tools_config),
+            'ConnectionDetailsTool': ConnectionDetailsTool(self.os_client, tools_config),
+            'AdvancedAnalyticsTool': AdvancedAnalyticsTool(self.os_client, tools_config),
+            'FIMEventsTool': FIMEventsTool(self.os_client, tools_config),
+            'SCAEventsTool': SCAEventsTool(self.os_client, tools_config),
+            'SessionEventsTool': SessionEventsTool(self.os_client, tools_config),
+            'MalwareEventsTool': MalwareEventsTool(self.os_client, tools_config),
+            'AIAnnotatedLogsTool': AIAnnotatedLogsTool(self.os_client, tools_config),
+            'MLAnomaliesTool': MLAnomaliesTool(self.os_client, tools_config),
+            'VulnerabilitiesTool': VulnerabilitiesTool(self.os_client, tools_config),
+            'HIPAAEventsTool': HIPAAEventsTool(self.os_client, tools_config),
+            'GDPREventsTool': GDPREventsTool(self.os_client, tools_config),
+            'NISTEventsTool': NISTEventsTool(self.os_client, tools_config),
+            'PCIDSSEventsTool': PCIDSSEventsTool(self.os_client, tools_config),
+            'TSCEventsTool': TSCEventsTool(self.os_client, tools_config),
             'MITREAttackTool': MITREAttackTool(self.os_client, tools_config),
-            'EndpointAnalyticsTool': EndpointAnalyticsTool(self.os_client, tools_config),
             'ThreatHuntingTool': ThreatHuntingTool(self.os_client, tools_config),
             'InvestigateIPTool': InvestigateIPTool(self.os_client, tools_config),
             'InvestigateUserTool': InvestigateUserTool(self.os_client, tools_config),
+            'GetLogsByTimestampTool': GetLogsByTimestampTool(self.os_client, tools_config),
+            'UBASummaryTool': UBASummaryTool(self.os_client, tools_config),
         }
         
         # Filter to enabled tools only
@@ -320,6 +345,53 @@ class SentinelMCPServer:
                 "src_ip": common_schemas["src_ip"],
                 "dest_ip": common_schemas["dest_ip"]
             }
+        elif tool_name == "get_connection_details":
+            return {
+                "time_range": common_schemas["time_range"],
+                "page": common_schemas["page"],
+                "size": common_schemas["size"],
+                "src_ip": common_schemas["src_ip"],
+                "dest_ip": common_schemas["dest_ip"],
+                "country": {
+                    "type": "string",
+                    "description": "Country code (e.g. US, CN)"
+                },
+                "connection_type": {
+                    "type": "string",
+                    "description": "Connection type: all, incoming, outgoing",
+                    "enum": ["all", "incoming", "outgoing"],
+                    "default": "all"
+                }
+            }
+        elif tool_name == "advanced_analytics_summary":
+            return {
+                "time_range": common_schemas["time_range"]
+            }
+        elif tool_name in ["get_fim_events", "get_sca_events", "get_session_events", 
+                          "get_malware_events", "get_ai_annotated_logs", "get_ml_anomalies"]:
+            return {
+                "time_range": common_schemas["time_range"],
+                "page": common_schemas["page"],
+                "size": common_schemas["size"]
+            }
+        elif tool_name == "get_vulnerabilities":
+            return {
+                "time_range": common_schemas["time_range"],
+                "page": common_schemas["page"],
+                "size": common_schemas["size"],
+                "min_score": {
+                    "type": "number",
+                    "description": "Minimum vulnerability score (0-10)",
+                    "default": 0.0
+                }
+            }
+        elif tool_name in ["get_hipaa_events", "get_gdpr_events", "get_nist_events", 
+                          "get_pci_dss_events", "get_tsc_events"]:
+            return {
+                "time_range": common_schemas["time_range"],
+                "page": common_schemas["page"],
+                "size": common_schemas["size"]
+            }
         elif tool_name == "get_mitre_attacks":
             return {
                 "time_range": common_schemas["time_range"],
@@ -328,11 +400,6 @@ class SentinelMCPServer:
                 "id": common_schemas["id"],
                 "min_level": common_schemas["min_level"],
                 "limit": common_schemas["limit"]
-            }
-        elif tool_name == "get_endpoint_analytics":
-            return {
-                "agent_name": common_schemas["agent_name"],
-                "time_range": common_schemas["time_range"]
             }
         elif tool_name == "threat_hunt":
             return {
@@ -373,6 +440,35 @@ class SentinelMCPServer:
                     "description": "Historical baseline window: 7d, 14d, 30d, 60d, 90d",
                     "default": "30d"
                 }
+            }
+        elif tool_name == "get_log_by_id":
+            return {
+                "id": {
+                    "type": "string",
+                    "description": "Log document ID"
+                }
+            }
+        elif tool_name == "get_logs_by_timestamp":
+            return {
+                "timestamp": {
+                    "type": "string",
+                    "description": "ISO format timestamp (e.g., 2024-12-08T14:30:00)"
+                },
+                "window_minutes": {
+                    "type": "integer",
+                    "description": "Minutes before and after timestamp to include",
+                    "default": 5
+                },
+                "size": common_schemas["size"],
+                "agent_name": {
+                    "type": "string",
+                    "description": "Optional filter by agent name"
+                }
+            }
+        elif tool_name == "uba_summary":
+            return {
+                "time_range": common_schemas["time_range"],
+                "limit": common_schemas["limit"]
             }
         
         return {}
