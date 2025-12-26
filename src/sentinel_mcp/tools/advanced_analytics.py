@@ -72,15 +72,11 @@ class AdvancedAnalyticsTool(BaseTool):
                         },
                         # Top protocols (Data)
                         'by_data_protocol': {
-                            'terms': {'field': 'data.protocol', 'size': 10}
+                            'terms': {'field': 'data.protocol', 'size': 10, 'missing': 'unknown'}
                         },
-                        # Top services
-                        'by_service': {
-                            'terms': {'field': 'data.service', 'size': 10}
-                        },
-                        # Rule descriptions
+                        # Rule descriptions (use keyword for aggregation)
                         'by_description': {
-                            'terms': {'field': 'rule.description', 'size': 20}
+                            'terms': {'field': 'rule.description.keyword', 'size': 20}
                         },
                         # Network flows (Sankey)
                         'network_flows': {
@@ -163,10 +159,6 @@ class AdvancedAnalyticsTool(BaseTool):
                     for b in aggs['by_agent']['buckets']
                 ],
                 'top_protocols': sorted_protocols,
-                'top_services': [
-                    {'name': b['key'], 'count': b['doc_count']}
-                    for b in aggs['by_service']['buckets']
-                ],
                 'top_rules': [
                     {'description': b['key'], 'count': b['doc_count']}
                     for b in aggs['by_description']['buckets']
@@ -194,10 +186,9 @@ class AdvancedAnalyticsTool(BaseTool):
 
     def _empty_stats(self) -> Dict[str, Any]:
         return {
-            'summary': {'total': 0, 'critical': 0, 'warning': 0, 'normal': 0},
+            'summary': {'total_events': 0, 'critical_events': 0, 'warning_events': 0, 'normal_events': 0},
             'top_agents': [],
             'top_protocols': [],
-            'top_services': [],
             'top_rules': [],
             'network_flows': [],
             'timeline': []

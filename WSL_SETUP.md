@@ -123,7 +123,7 @@ nano config.yaml
 Update these values:
 ```yaml
 opensearch:
-  hosts: "http://192.168.1.133:9200"
+  hosts: "http://192.168.1.12:9200"
   username: "admin"
   password: "admin"
   verify_certs: false

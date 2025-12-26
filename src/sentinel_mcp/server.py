@@ -38,7 +38,6 @@ from .tools.compliance import (
     HIPAAEventsTool, GDPREventsTool, NISTEventsTool, 
     PCIDSSEventsTool, TSCEventsTool
 )
-from .tools.uba_summary import UBASummaryTool
 
 # Configure logging
 logging.basicConfig(
@@ -115,7 +114,6 @@ class SentinelMCPServer:
             'InvestigateIPTool': InvestigateIPTool(self.os_client, tools_config),
             'InvestigateUserTool': InvestigateUserTool(self.os_client, tools_config),
             'GetLogsByTimestampTool': GetLogsByTimestampTool(self.os_client, tools_config),
-            'UBASummaryTool': UBASummaryTool(self.os_client, tools_config),
         }
         
         # Filter to enabled tools only

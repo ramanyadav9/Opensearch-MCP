@@ -10,7 +10,7 @@ services:
     
     # Environment variables (optional - can override config.yaml)
     environment:
-      - OPENSEARCH_HOST=http://192.168.1.133:9200
+      - "OPENSEARCH_HOSTS=http://192.168.1.12:9200"
       - OPENSEARCH_USERNAME=admin
       - OPENSEARCH_PASSWORD=admin
     

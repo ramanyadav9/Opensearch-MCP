@@ -25,7 +25,7 @@ async def test_investigate_user():
     
     # Create OpenSearch client
     config = {
-        "hosts": ["http://192.168.1.133:9200"],
+        "hosts": ["http://192.168.1.12:9200"],
         "username": "admin",
         "password": "admin",
         "verify_certs": False

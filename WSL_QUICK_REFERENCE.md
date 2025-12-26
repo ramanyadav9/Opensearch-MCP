@@ -121,7 +121,7 @@ sudo usermod -aG docker $USER
 newgrp docker
 
 # Can't connect to OpenSearch
-curl http://192.168.1.133:9200
+curl http://192.168.1.12:9200
 ```
 
 ---

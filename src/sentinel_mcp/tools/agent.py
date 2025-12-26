@@ -16,9 +16,10 @@ class AgentLogsTool(BaseTool):
     
     def description(self) -> str:
         return (
-            "Get logs for a SPECIFIC AGENT/ENDPOINT by name. Use for: 'Show logs for server01', "
-            "'What happened on workstation-5?'. Set include_analytics=true for MITRE tactics, "
-            "network destinations, and severity stats. Returns paginated logs with stats."
+            "PRIMARY TOOL for any agent/endpoint/hostname/server/workstation queries. "
+            "ALWAYS use this when user mentions a machine name like 'raman', 'server01', 'MDM-189'. "
+            "Use for: 'Show logs for raman', 'What happened on server01?', 'Check workstation-5'. "
+            "Set include_analytics=true for MITRE tactics, network destinations, and severity stats."
         )
     
     async def execute(self,

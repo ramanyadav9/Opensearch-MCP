@@ -20,7 +20,7 @@ copy config.yaml.example config.yaml
 Edit `config.yaml` with your OpenSearch credentials:
 ```yaml
 opensearch:
-  hosts: "http://192.168.1.133:9200"
+  hosts: "http://192.168.1.12:9200"
   username: "admin"
   password: "admin"
   verify_certs: false

@@ -55,9 +55,11 @@ class AdvancedSIEMSearchTool(BaseTool):
     
     def description(self) -> str:
         return (
-            "GENERAL LOG SEARCH. Use for: free-form queries, DQL syntax, filtering logs. "
-            "Supports time_range (15m, 1h, 24h), log_type (firewall, ids, windows, linux), "
-            "min_level (0-15). Use specific category tools if searching for FIM, malware, etc."
+            "FALLBACK ONLY - General log search. DO NOT use if user mentions a specific "
+            "agent/hostname/endpoint/server/workstation name (use get_agent_logs instead) or "
+            "if user asks to 'investigate' a user/person (use investigate_user instead). "
+            "Use this ONLY for: general queries without specific entity names, DQL syntax searches, "
+            "or filtering by log_type (firewall, ids, windows, linux)."
         )
     
     async def execute(self, 

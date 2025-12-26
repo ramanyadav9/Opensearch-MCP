@@ -196,14 +196,205 @@ class CorrelationEngine:
             logger.error(f"Error querying alerts for IP {ip}: {e}")
         
         # Query 2: Get network flows
-        # (Would use advanced-analytics endpoint in real implementation)
         logger.debug(f"Network flow analysis for IP: {ip}")
+        try:
+            network_query = {
+                "bool": {
+                    "must": [
+                        {
+                            "range": {
+                                "@timestamp": {
+                                    "gte": start_time.isoformat(),
+                                    "lte": end_time.isoformat()
+                                }
+                            }
+                        },
+                        {
+                            "bool": {
+                                "should": [
+                                    {"term": {"network.srcIp": ip}},
+                                    {"term": {"network.destIp": ip}},
+                                    {"term": {"data.srcip": ip}},
+                                    {"term": {"data.dstip": ip}}
+                                ],
+                                "minimum_should_match": 1
+                            }
+                        }
+                    ]
+                }
+            }
+
+            network_response = await self.client.search(
+                index="logs-*",
+                body={
+                    "query": network_query,
+                    "size": 500,
+                    "sort": [{"@timestamp": {"order": "desc"}}]
+                }
+            )
+
+            result.query_count += 1
+
+            if network_response and 'hits' in network_response:
+                hits = network_response['hits']['hits']
+                result.total_events += len(hits)
+                
+                for hit in hits:
+                    source = hit['_source']
+                    
+                    # Extract unique destinations/sources for graph
+                    src_ip = source.get('network', {}).get('srcIp') or source.get('data', {}).get('srcip')
+                    dest_ip = source.get('network', {}).get('destIp') or source.get('data', {}).get('dstip')
+                    
+                    # Add simple network events to timeline if they are significant (e.g., large transfer or specific ports)
+                    # For now, we add a summary if it looks interesting
+                    if src_ip and dest_ip:
+                        other_ip = dest_ip if src_ip == ip else src_ip
+                        # We don't want to flood the timeline, so maybe just track connections in the future
+                        # For now, let's look for high ports or known protocols
+                        pass
+
+        except Exception as e:
+            logger.error(f"Error querying network flows for IP {ip}: {e}")
         
-        # Query 3: Get authentication sessions for affected agents
+        # Query 3: Get authentication sessions
+        # 3a. Auth sessions where source IP is the investigated IP
+        logger.debug(f"Querying auth sessions for source IP: {ip}")
+        try:
+            auth_ip_query = {
+                "bool": {
+                    "must": [
+                        {
+                            "range": {
+                                "@timestamp": {
+                                    "gte": start_time.isoformat(),
+                                    "lte": end_time.isoformat()
+                                }
+                            }
+                        },
+                        {
+                            "bool": {
+                                "should": [
+                                    {"term": {"network.srcIp": ip}},
+                                    {"term": {"data.srcip": ip}},
+                                    {"term": {"source.ip": ip}}
+                                ],
+                                "minimum_should_match": 1
+                            }
+                        },
+                        {
+                            "bool": {
+                                "should": [
+                                    {"match": {"rule.groups": "authentication_success"}},
+                                    {"match": {"rule.groups": "authentication_failed"}},
+                                ],
+                                "minimum_should_match": 1
+                            }
+                        }
+                    ]
+                }
+            }
+            
+            auth_response = await self.client.search(
+                index="logs-*",
+                body={"query": auth_ip_query, "size": 100}
+            )
+            
+            result.query_count += 1
+            
+            if auth_response and 'hits' in auth_response:
+                hits = auth_response['hits']['hits']
+                result.total_events += len(hits)
+                
+                for hit in hits:
+                    source = hit['_source']
+                    is_failed = 'failed' in str(source.get('rule', {}).get('groups', '')).lower()
+                    user = source.get('data', {}).get('srcuser') or source.get('data', {}).get('user')
+                    
+                    if user and user not in result.affected_users:
+                        result.affected_users.append(user)
+                    
+                    result.timeline.append({
+                        'timestamp': source.get('@timestamp'),
+                        'type': 'login_failed' if is_failed else 'login_success',
+                        'description': f"Login {'failed' if is_failed else 'success'} for user {user or 'unknown'}",
+                        'level': source.get('rule', {}).get('level'),
+                        'user': user
+                    })
+
+                    # Add risk for failed logins from this IP
+                    if is_failed:
+                        # Check if we already have a failed login risk factor
+                        existing = next((r for r in result.risk_factors if r['type'] == 'failed_login_spike'), None)
+                        if existing:
+                            existing['count'] += 1
+                            existing['points'] = min(existing['count'] * 2, 20)
+                            existing['description'] = f"{existing['count']} failed login attempts from IP"
+                        else:
+                             result.risk_factors.append({
+                                'type': 'failed_login_spike',
+                                'count': 1,
+                                'points': 2,
+                                'description': "Failed login attempts from IP"
+                            })
+
+        except Exception as e:
+            logger.error(f"Error querying auth sessions for IP {ip}: {e}")
+
+        # 3b. Auth sessions for affected agents (if any)
         if result.affected_agents:
             logger.debug(f"Querying auth sessions for {len(result.affected_agents)} agents")
-            # Query authentication logs
-            # (Implementation would query /api/logs/sessions)
+            try:
+                # Limit to first 5 agents to avoid massive queries
+                target_agents = result.affected_agents[:5]
+                agent_auth_query = {
+                    "bool": {
+                        "must": [
+                            {
+                                "range": {
+                                    "@timestamp": {
+                                        "gte": start_time.isoformat(),
+                                        "lte": end_time.isoformat()
+                                    }
+                                }
+                            },
+                             {
+                                "bool": {
+                                    "should": [
+                                        {"match": {"rule.groups": "authentication_success"}},
+                                        {"match": {"rule.groups": "authentication_failed"}},
+                                    ],
+                                    "minimum_should_match": 1
+                                }
+                            },
+                            {
+                                "terms": {"agent.name": target_agents}
+                            }
+                        ]
+                    }
+                }
+                
+                agent_auth_response = await self.client.search(
+                    index="logs-*",
+                    body={"query": agent_auth_query, "size": 100}
+                )
+                
+                result.query_count += 1
+                
+                if agent_auth_response and 'hits' in agent_auth_response:
+                    hits = agent_auth_response['hits']['hits']
+                    # We don't add to total_events here to avoid double counting if they overlap, 
+                    # and because these are secondary correlations
+                    
+                    for hit in hits:
+                        source = hit['_source']
+                        # Just extract users we might have missed
+                        user = source.get('data', {}).get('user') or source.get('data', {}).get('srcuser')
+                        if user and user not in result.affected_users:
+                            result.affected_users.append(user)
+                            
+            except Exception as e:
+                logger.error(f"Error querying agent auth sessions: {e}")
         
         # Build entity graph
         result.entity_graph = self._build_entity_graph(result)

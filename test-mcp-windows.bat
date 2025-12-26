@@ -5,7 +5,7 @@ echo ======================================
 echo.
 
 echo [1/2] Testing OpenSearch Connection...
-curl -u admin:admin http://192.168.1.133:9200 > nul 2>&1
+curl -u admin:admin http://192.168.1.12:9200 > nul 2>&1
 if %ERRORLEVEL% EQU 0 (
     echo    SUCCESS: OpenSearch is accessible
 ) else (

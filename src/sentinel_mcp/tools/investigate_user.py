@@ -32,12 +32,11 @@ class InvestigateUserTool(BaseTool):
     def description(self) -> str:
         """Tool description"""
         return (
-            "Comprehensive UEBA orchestrator for user/agent investigation. "
-            "Treats user==agent and orchestrates multiple tools to gather: "
-            "authentication sessions, file modifications, malware events, "
-            "process execution, network activity, vulnerability scan, "
-            "compliance violations. Builds behavioral baseline and detects anomalies. "
-            "Calculates insider threat score based on historical patterns."
+            "USE THIS when user asks to 'investigate' a user or agent/person name. "
+            "Performs deep UEBA analysis: authentication sessions, file modifications, malware events, "
+            "network activity, compliance violations, insider threat scoring. "
+            "Example queries: 'Investigate user raman', 'Is john a threat?', 'Analyze admin behavior'. "
+            "NOT for simple log lookups - use get_agent_logs for those."
         )
     
     async def execute(

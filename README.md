@@ -208,6 +208,9 @@ Once configured, you can ask Claude:
 | `get_auth_sessions` | Authentication analysis |
 | `list_indices` | List available log indices |
 | `get_index_mapping` | Get field mappings for indices |
+| `investigate_ip` | Deep correlation analysis for IP addresses |
+| `investigate_user` | Comprehensive UEBA for users/agents |
+| `threat_hunt` | Hunter-style queries for threats |
 
 ## Development
 
