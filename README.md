@@ -247,5 +247,4 @@ ruff check src/
 - Filter by agent or log type for focused queries
 
 ## License
-
-Internal use only - Sentinel-AI Team
+This Project was made for internel project
